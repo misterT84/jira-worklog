@@ -1,30 +1,23 @@
 <?php
 
+use Jira\JiraClient;
 use Zend\Config\Factory as ConfigFactory;
 
 require_once 'vendor/autoload.php';
 $config = ConfigFactory::fromFiles(glob(__DIR__ . '/config/{,*.}{global,local}.php', GLOB_BRACE));
-
-if (empty($config['basicAuthString'])) {
-    echo "\033[0;31m Keine Credentials hinterlegt\033[0m";
-    exit;
-}
 
 if (empty($config['jiraFilterId'])) {
     echo "\033[0;31m Keine FilterId hinterlegt\033[0m";
     exit;
 }
 
-$url = rtrim($config['jiraUrl'], '/') . '/rest/api/2/search?jql=filter%3D' . $config['jiraFilterId'] . '&fields=worklog&maxResults=100';
+$jiraClient = new JiraClient(
+    $config['jiraUrl'],
+    $config['jiraFilterId'],
+    $config['auth']
+);
 
-$client = new GuzzleHttp\Client();
-$response = $client->get($url, [
-    'headers' => [
-        'Authorization' => 'Basic ' . $config['basicAuthString'],
-    ],
-]);
-
-$jsonResponse = json_decode($response->getBody(), true);
+$jsonResponse = $jiraClient->getWorklog();
 
 $result = [];
 $today = new DateTime();
