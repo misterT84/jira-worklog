@@ -1,0 +1,16 @@
+{
+    "name": "l-tucheler/worklog",
+    "description": "Jira Stundenbuchungen auswerten",
+    "require": {
+        "guzzlehttp/guzzle": "^6.3"
+    },
+    "authors": [
+        {
+            "name": "l-tucheler",
+            "email": "tucheler@mehrkanal.com"
+        }
+    ],
+    "require-dev": {
+        "symfony/var-dumper": "^4.0"
+    }
+}
