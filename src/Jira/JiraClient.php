@@ -48,7 +48,10 @@ class JiraClient
         return json_decode($response->getBody(), true);
     }
 
-    private function getBasicAuthCredentials()
+    /**
+     * @return string
+     */
+    private function getBasicAuthCredentials(): string
     {
         return base64_encode($this->authSettings['username'] . ':' . $this->authSettings['password']);
     }
