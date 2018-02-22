@@ -1,44 +1,34 @@
 <?php
 
+use Jira\JiraClient;
+use Zend\Config\Factory as ConfigFactory;
+
 require_once 'vendor/autoload.php';
+$config = ConfigFactory::fromFiles(glob(__DIR__ . '/config/{,*.}{global,local}.php', GLOB_BRACE));
 
-$jiraFilterId = 0;
-$credentials = '';
-$startDate = 'last Monday';
-$startDay = 'Mon';
-$sprintDurationInDays = '13';
-
-if (empty($credentials)) {
-    echo "\033[0;31m Keine Credentials hinterlegt\033[0m";
-    exit;
-}
-
-if (empty($jiraFilterId)) {
+if (empty($config['jiraFilterId'])) {
     echo "\033[0;31m Keine FilterId hinterlegt\033[0m";
     exit;
 }
 
-$url = 'https://mehrkanal.atlassian.net/rest/api/2/search?jql=filter%3D' . $jiraFilterId . '&fields=worklog&maxResults=100';
+$jiraClient = new JiraClient(
+    $config['jiraUrl'],
+    $config['jiraFilterId'],
+    $config['auth']
+);
 
-$client = new GuzzleHttp\Client();
-$response = $client->get($url, [
-    'headers' => [
-        'Authorization' => 'Basic ' . $credentials,
-    ],
-]);
-
-$jsonResponse = json_decode($response->getBody(), true);
+$jsonResponse = $jiraClient->getWorklog();
 
 $result = [];
 $today = new DateTime();
 $today->setTime(0, 0, 0);
-$sprintStartDate = new DateTime($startDate);
+$sprintStartDate = new DateTime($config['startDate']);
 
-if ($today->format('D') === $startDay) {
+if ($today->format('D') === $config['startDay']) {
     $sprintStartDate = $today;
 }
 $sprintEndDate = clone($sprintStartDate);
-$sprintEndDate->modify('+' . $sprintDurationInDays . ' days');
+$sprintEndDate->modify('+' . $config['sprintDurationInDays'] . ' days');
 
 foreach ($jsonResponse['issues'] as $issue) {
     foreach ($issue['fields']['worklog']['worklogs'] as $worklog) {

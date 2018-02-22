@@ -1,0 +1,11 @@
+<?php
+
+return [
+    'auth' => [
+        'username' => '',
+        'password' => '',
+        'basicAuthString' => '',
+    ],
+    'jiraUrl' => '',
+    'jiraFilterId' => '36507',
+];
