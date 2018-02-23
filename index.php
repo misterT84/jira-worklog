@@ -19,7 +19,7 @@ $jiraClient = new JiraClient(
 
 $jsonResponse = $jiraClient->getWorklog();
 
-$result = [];
+$logs = [];
 $today = new DateTime();
 $today->setTime(0, 0, 0);
 $sprintStartDate = new DateTime($config['startDate']);
@@ -30,29 +30,59 @@ if ($today->format('D') === $config['startDay']) {
 $sprintEndDate = clone($sprintStartDate);
 $sprintEndDate->modify('+' . $config['sprintDurationInDays'] . ' days');
 
+$totalTimeEmployee = [];
+
 foreach ($jsonResponse['issues'] as $issue) {
     foreach ($issue['fields']['worklog']['worklogs'] as $worklog) {
-        $logTime = new DateTimeImmutable($worklog['created']);
+        $logTime = new DateTimeImmutable($worklog['started']);
+        $logDate = $logTime->format('Ymd');
 
         if ($logTime < $sprintStartDate) {
             continue;
         }
         $authorName = $worklog['author']['displayName'];
 
-        if (!isset($result[$authorName])) {
-            $result[$authorName] = 0;
+        if (!isset($logs[$logDate][$authorName])) {
+            $logs[$logDate][$authorName] = 0;
+        }
+        if (!isset($totalTimeEmployee[$authorName])) {
+            $totalTimeEmployee[$authorName] = 0;
         }
 
-        $result[$authorName] += $worklog['timeSpentSeconds'];
+        $logs[$logDate][$authorName] += $worklog['timeSpentSeconds'];
+        $totalTimeEmployee[$authorName] += $worklog['timeSpentSeconds'];
     }
 }
 
-$logsByEmployee = array_map('secondsToPrettyTimeString', $result);
-
 printHeader($sprintStartDate, $sprintEndDate);
 
-foreach ($logsByEmployee as $employee => $timeSpent) {
-    echo sprintf('%s hat %s geloggt', $employee, $timeSpent);
+$totalEmployee = [];
+
+foreach ($logs as $date => $employeeLog) {
+    $logDate = DateTimeImmutable::createFromFormat('Ymd', $date);
+    echo str_repeat('#', 72);
+    echo PHP_EOL;
+    echo $logDate->format('d.m.Y');
+    echo PHP_EOL;
+    echo str_repeat('#', 72);
+    echo PHP_EOL;
+    ksort($employeeLog);
+    foreach ($employeeLog as $employee => $timeSpent) {
+        echo sprintf('%s hat %s geloggt', str_pad($employee, 30), secondsToPrettyTimeString($timeSpent));
+        echo PHP_EOL;
+    }
+}
+
+echo str_repeat('#', 72);
+echo PHP_EOL;
+echo 'GESAMT';
+echo PHP_EOL;
+echo str_repeat('#', 72);
+echo PHP_EOL;
+
+ksort($totalTimeEmployee);
+foreach ($totalTimeEmployee as $employee => $timeSpent) {
+    echo sprintf('%s hat %s geloggt', str_pad($employee, 30), secondsToPrettyTimeString($timeSpent));
     echo PHP_EOL;
 }
 
@@ -68,7 +98,7 @@ function secondsToPrettyTimeString(int $seconds): string
     $hours = $hoursTotal % 8;
     $minutes = $minutesTotal % 60;
 
-    return sprintf('%d Tage %d Stunden %d Minuten', $days, $hours, $minutes);
+    return sprintf('%d Tage %d Stunden %3$02d Minuten', $days, $hours, $minutes);
 }
 
 /**
@@ -80,7 +110,5 @@ function printHeader(DateTime $sprintStartDate, DateTime $sprintEndDate): void
     echo str_repeat('#', 72);
     echo PHP_EOL;
     echo sprintf('Aktueller Sprint: %s - %s', $sprintStartDate->format('d.m.Y'), $sprintEndDate->format('d.m.Y'));
-    echo PHP_EOL;
-    echo str_repeat('#', 72);
     echo PHP_EOL;
 }
