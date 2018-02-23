@@ -81,10 +81,17 @@ echo str_repeat('#', 72);
 echo PHP_EOL;
 
 ksort($totalTimeEmployee);
+$timeTotal = 0;
 foreach ($totalTimeEmployee as $employee => $timeSpent) {
     echo sprintf('%s hat %s geloggt', str_pad($employee, 30), secondsToPrettyTimeString($timeSpent));
     echo PHP_EOL;
+    $timeTotal += $timeSpent;
 }
+
+echo str_repeat('#', 72);
+echo PHP_EOL;
+echo PHP_EOL;
+echo sprintf('Summe %s', secondsToPrettyTimeString($timeTotal));
 
 /**
  * @param int $seconds
